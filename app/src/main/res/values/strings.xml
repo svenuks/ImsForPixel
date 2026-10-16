@@ -1,4 +1,87 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">IMS for Pixel</string>
+    <string name="app_subtitle">Rootless VoLTE/VoNR calling configuration</string>
+
+    <!-- Notification Strings -->
+    <string name="notification_channel_ims_status">IMS Activation Status</string>
+    <string name="notification_title_volte_success">✅ VoLTE activated successfully</string>
+    <string name="notification_title_volte_done">⚠️ VoLTE activation completed</string>
+    <string name="notification_title_config_restored">✅ Configuration restored to default</string>
+    <string name="notification_sim1_registered">SIM 1: IMS Registered  </string>
+    <string name="notification_sim1_not_registered">SIM 1: IMS Not Registered  </string>
+    <string name="notification_sim2_registered">SIM 2: IMS Registered</string>
+    <string name="notification_sim2_not_registered">SIM 2: IMS Not Registered</string>
+    <string name="notification_config_cleared">Carrier config overrides cleared, please test call functionality</string>
+
+    <string name="notification_permission_required">Notification permission required to enter pairing code from notification shade</string>
+    <string name="notification_channel_pairing">Wireless Debugging Pairing</string>
+    <string name="notification_channel_pairing_desc">Used to enter wireless debugging pairing code from notification shade</string>
+    <string name="notification_pairing_reply_label">Enter 6-digit pairing code</string>
+    <string name="notification_pairing_send_action">Send Pairing Code</string>
+    <string name="notification_pairing_prompt">💡 Tap \"Send Pairing Code\" below to enter 6 digits</string>
+    <string name="toast_pairing_port_missing">System pairing port not detected. Please ensure pairing dialog is open!</string>
+    <string name="notification_pairing_failed_port">Pairing failed: System pairing dialog port not detected</string>
+    <string name="toast_pairing_in_progress">Pairing device in background...</string>
+    <string name="notification_pairing_port_progress">Pairing with port %1$d...</string>
+    <string name="toast_pairing_success">Pairing successful via notification!</string>
+    <string name="notification_pairing_success">Pairing successful! Return to app to activate config.</string>
+    <string name="toast_pairing_failed">Pairing failed: %1$s</string>
+    <string name="notification_pairing_failed">Pairing failed: %1$s</string>
+
+    <!-- Toast Strings -->
+    <string name="toast_enable_wireless_debugging">Please enable Wireless Debugging first</string>
+    <string name="toast_activation_failed">Activation failed: %1$s</string>
+    <string name="toast_restore_failed">Restore failed: %1$s</string>
+    <string name="toast_developer_options_not_found">Developer options not found</string>
+
+    <!-- UI Tabs & Headers -->
+    <string name="sim_slot_1">SIM 1</string>
+    <string name="sim_slot_2">SIM 2</string>
+    <string name="config_panel_title">Carrier Settings (SIM %1$d)</string>
+    <string name="badge_config_applied">Config: Applied</string>
+    <string name="badge_config_default">Config: Default</string>
+    <string name="badge_ims_registered">IMS: Registered</string>
+    <string name="badge_ims_not_registered">IMS: Not Registered</string>
+
+    <!-- Toggle Switches -->
+    <string name="toggle_volte_title">Enable VoLTE Calling (VoLTE)</string>
+    <string name="toggle_volte_desc">Allow voice calls over 4G/LTE network</string>
+    <string name="toggle_vonr_title">Enable 5G Calling (VoNR)</string>
+    <string name="toggle_vonr_desc">Enable standalone 5G voice calling support (VoNR)</string>
+    <string name="toggle_vowifi_title">Enable Wi-Fi Calling (VoWiFi)</string>
+    <string name="toggle_vowifi_desc">Allow calls over Wi-Fi when cellular signal is poor</string>
+    <string name="toggle_wfc_roaming_title">Enable Wi-Fi Calling in Roaming</string>
+    <string name="toggle_wfc_roaming_desc">Keep Wi-Fi calling enabled when abroad or roaming</string>
+    <string name="toggle_ss_ut_title">Enable Supplementary Services (UT)</string>
+    <string name="toggle_ss_ut_desc">Enable carrier call forwarding, call waiting, and supplemental network settings</string>
+
+    <!-- Wireless Debugging Card -->
+    <string name="card_activation_title">Wireless Debugging Activation</string>
+    <string name="step1_title">Step 1: Connect to Wi-Fi (Prerequisite)</string>
+    <string name="step1_desc">Wireless debugging requires your phone to be connected to Wi-Fi</string>
+    <string name="status_connected">Connected</string>
+    <string name="status_not_connected">Not connected</string>
+
+    <string name="step2_title">Step 2: Enable Service &amp; Pair</string>
+    <string name="step2_status_authorized">Paired and authorized</string>
+    <string name="step2_status_needs_pairing">Service enabled (Pairing required)</string>
+    <string name="step2_status_prompt">Please enable Wireless Debugging in Settings</string>
+    <string name="badge_authorized">Authorized</string>
+    <string name="badge_unpaired">Unpaired</string>
+    <string name="btn_open_wireless_debugging">Go to Wireless Debugging</string>
+
+    <string name="step3_title">Step 3: One-Tap Activate</string>
+    <string name="step3_desc">Apply above parameters to active SIM cards</string>
+    <string name="sim1_config_title">SIM 1 Voice Config</string>
+    <string name="sim2_config_title">SIM 2 Voice Config</string>
+    <string name="status_app_optimized">App Optimized</string>
+    <string name="status_system_default">System Default</string>
+    <string name="btn_activate">One-Tap Activate</string>
+    <string name="btn_waiting">Waiting for service...</string>
+    <string name="btn_restore">Restore Defaults</string>
+    <string name="hint_ims_update">💡 IMS status will automatically update within seconds after activation.</string>
+    <string name="toggle_hide_advanced">Hide advanced settings</string>
+    <string name="toggle_show_advanced">Show advanced settings</string>
+    <string name="label_adb_port">Connection Port (ADB Port)</string>
 </resources>

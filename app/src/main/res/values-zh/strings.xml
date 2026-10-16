@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">IMS for Pixel</string>
+    <string name="app_subtitle">免Root原生配置VoLTE/VoNR通话</string>
+
+    <!-- Notification Strings -->
+    <string name="notification_channel_ims_status">IMS 激活状态</string>
+    <string name="notification_title_volte_success">✅ VoLTE 激活成功</string>
+    <string name="notification_title_volte_done">⚠️ VoLTE 激活完成</string>
+    <string name="notification_title_config_restored">✅ 配置已恢复默认</string>
+    <string name="notification_sim1_registered">SIM 1: IMS 已注册  </string>
+    <string name="notification_sim1_not_registered">SIM 1: IMS 未注册  </string>
+    <string name="notification_sim2_registered">SIM 2: IMS 已注册</string>
+    <string name="notification_sim2_not_registered">SIM 2: IMS 未注册</string>
+    <string name="notification_config_cleared">运营商覆盖配置已清除，请测试通话功能是否正常</string>
+
+    <string name="notification_permission_required">需要通知权限以支持在通知栏直接输入配对码</string>
+    <string name="notification_channel_pairing">无线调试配对</string>
+    <string name="notification_channel_pairing_desc">用于在通知栏便捷输入无线调试配对码</string>
+    <string name="notification_pairing_reply_label">输入6位配对码</string>
+    <string name="notification_pairing_send_action">发送配对码</string>
+    <string name="notification_pairing_prompt">💡 请点击下方“发送配对码”输入6位配对码</string>
+    <string name="toast_pairing_port_missing">未捕获到系统配对端口，请确保已打开配对弹窗！</string>
+    <string name="notification_pairing_failed_port">配对失败：未检测到系统配对弹窗端口</string>
+    <string name="toast_pairing_in_progress">后台正在配对设备...</string>
+    <string name="notification_pairing_port_progress">正在配对端口 %1$d...</string>
+    <string name="toast_pairing_success">通知栏配对成功！</string>
+    <string name="notification_pairing_success">配对成功！请返回应用点击一键激活配置。</string>
+    <string name="toast_pairing_failed">配对失败: %1$s</string>
+    <string name="notification_pairing_failed">配对失败: %1$s</string>
+
+    <!-- Toast Strings -->
+    <string name="toast_enable_wireless_debugging">请先开启无线调试服务</string>
+    <string name="toast_activation_failed">激活失败: %1$s</string>
+    <string name="toast_restore_failed">恢复失败: %1$s</string>
+    <string name="toast_developer_options_not_found">未找到开发者选项</string>
+
+    <!-- UI Tabs & Headers -->
+    <string name="sim_slot_1">SIM 卡 1</string>
+    <string name="sim_slot_2">SIM 卡 2</string>
+    <string name="config_panel_title">运营商参数设置 (插槽 %1$d)</string>
+    <string name="badge_config_applied">配置:已应用</string>
+    <string name="badge_config_default">配置:系统默认</string>
+    <string name="badge_ims_registered">IMS:已注册</string>
+    <string name="badge_ims_not_registered">IMS:未注册</string>
+
+    <!-- Toggle Switches -->
+    <string name="toggle_volte_title">启用 VoLTE 通话 (VoLTE)</string>
+    <string name="toggle_volte_desc">允许通过 4G/LTE 网络进行语音通话</string>
+    <string name="toggle_vonr_title">启用 5G 通话 (VoNR)</string>
+    <string name="toggle_vonr_desc">启用 5G 独立组网语音通话支持 (VoNR)</string>
+    <string name="toggle_vowifi_title">启用 Wi-Fi 通话 (VoWiFi)</string>
+    <string name="toggle_vowifi_desc">在移动网络信号差时通过 Wi-Fi 拨打电话</string>
+    <string name="toggle_wfc_roaming_title">漫游时启用 Wi-Fi 通话</string>
+    <string name="toggle_wfc_roaming_desc">在国际漫游或离开本网时仍保持 Wi-Fi 通话可用</string>
+    <string name="toggle_ss_ut_title">启用补充业务 (UT)</string>
+    <string name="toggle_ss_ut_desc">启用运营商呼叫转移、呼叫等待及网络补充设置</string>
+
+    <!-- Wireless Debugging Card -->
+    <string name="card_activation_title">无线调试激活</string>
+    <string name="step1_title">第一步：连接 Wi-Fi (必要前提)</string>
+    <string name="step1_desc">启用无线调试需先确保手机已连接到 Wi-Fi 网络</string>
+    <string name="status_connected">已连接</string>
+    <string name="status_not_connected">未连接</string>
+
+    <string name="step2_title">第二步：启用服务并配对</string>
+    <string name="step2_status_authorized">配对成功，已授权连接</string>
+    <string name="step2_status_needs_pairing">服务已开启 (需配对)</string>
+    <string name="step2_status_prompt">请在系统设置中开启无线调试</string>
+    <string name="badge_authorized">已授权</string>
+    <string name="badge_unpaired">未配对</string>
+    <string name="btn_open_wireless_debugging">去开启无线调试</string>
+
+    <string name="step3_title">第三步：一键激活配置</string>
+    <string name="step3_desc">将上方设置的参数应用到当前 SIM 卡中</string>
+    <string name="sim1_config_title">SIM 卡 1 通话配置</string>
+    <string name="sim2_config_title">SIM 卡 2 通话配置</string>
+    <string name="status_app_optimized">App已优化</string>
+    <string name="status_system_default">系统默认</string>
+    <string name="btn_activate">一键激活</string>
+    <string name="btn_waiting">等待开启...</string>
+    <string name="btn_restore">一键恢复</string>
+    <string name="hint_ims_update">💡 激活后 IMS 状态将在数秒内自动更新。</string>
+    <string name="toggle_hide_advanced">隐藏高级设置</string>
+    <string name="toggle_show_advanced">显示高级设置</string>
+    <string name="label_adb_port">连接端口 (ADB Port)</string>
+</resources>

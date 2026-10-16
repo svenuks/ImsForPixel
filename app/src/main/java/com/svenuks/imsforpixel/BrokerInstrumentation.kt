@@ -1,11 +1,12 @@
 package com.svenuks.imsforpixel
- 
+
 import android.app.Instrumentation
 import android.content.Context
 import android.os.Bundle
 import android.os.PersistableBundle
 import android.system.Os
 import android.telephony.CarrierConfigManager
+import android.telephony.SubscriptionInfo
 import android.telephony.SubscriptionManager
 import android.telephony.TelephonyManager
 import android.util.Log
@@ -18,12 +19,11 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 
- 
 class BrokerInstrumentation : Instrumentation() {
     companion object {
         private const val TAG = "VoLTEBrokerInst"
     }
- 
+
     private fun findMethod(obj: Any, name: String): Method? {
         var clazz: Class<*>? = obj.javaClass
         while (clazz != null) {
@@ -39,7 +39,6 @@ class BrokerInstrumentation : Instrumentation() {
             clazz = clazz.superclass
         }
         
-        // Search interfaces
         for (iface in obj.javaClass.interfaces) {
             try {
                 val method = iface.declaredMethods.firstOrNull { it.name == name }
@@ -53,7 +52,7 @@ class BrokerInstrumentation : Instrumentation() {
         }
         return null
     }
- 
+
     override fun onCreate(arguments: Bundle?) {
         super.onCreate(arguments)
         Log.d(TAG, "BrokerInstrumentation starting...")
@@ -77,7 +76,6 @@ class BrokerInstrumentation : Instrumentation() {
                 var retries = 5
                 while (retries > 0) {
                     try {
-                        // Try to get standard UiAutomation first to avoid flags mismatch and disconnect() call on Android 15/16
                         uiAutomation = getUiAutomation()
                         if (uiAutomation != null) {
                             Log.d(TAG, "Successfully connected UiAutomation")
@@ -135,18 +133,58 @@ class BrokerInstrumentation : Instrumentation() {
         }
     }
 
+    private fun getActiveSimTargets(subManager: SubscriptionManager): List<Pair<Int, Int>> {
+        val targets = mutableListOf<Pair<Int, Int>>() // List of (slotIndex, subId)
+        
+        // Method 1: Check slot indices 0 and 1 directly via SubscriptionManager
+        for (slot in 0..1) {
+            try {
+                val info = subManager.getActiveSubscriptionInfoForSimSlotIndex(slot)
+                if (info != null && info.subscriptionId != SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
+                    targets.add(Pair(slot, info.subscriptionId))
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to get active sub info for slot $slot", e)
+            }
+        }
+
+        // Method 2: Inspect activeSubscriptionInfoList for eSIM profiles that report slotIndex < 0
+        try {
+            val list = subManager.activeSubscriptionInfoList ?: emptyList()
+            for (info in list) {
+                val subId = info.subscriptionId
+                if (subId == SubscriptionManager.INVALID_SUBSCRIPTION_ID) continue
+                
+                var slotIndex = info.simSlotIndex
+                if (slotIndex < 0) {
+                    // eSIM profile with -1 slot index: map to an unused slot index (prefer slot 1 if 0 is taken, or vice-versa)
+                    val existingSlots = targets.map { it.first }.toSet()
+                    slotIndex = if (!existingSlots.contains(1)) 1 else if (!existingSlots.contains(0)) 0 else 1
+                }
+                
+                if (targets.none { it.first == slotIndex || it.second == subId }) {
+                    targets.add(Pair(slotIndex, subId))
+                }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to inspect activeSubscriptionInfoList", e)
+        }
+
+        Log.d(TAG, "Resolved SIM targets: $targets")
+        return targets
+    }
+
     private fun queryStatusOnly() {
         val subManager = context.getSystemService(SubscriptionManager::class.java) ?: return
-        val activeSubscriptions = subManager.activeSubscriptionInfoList ?: emptyList()
-        Log.d(TAG, "QueryStatusOnly: Found ${activeSubscriptions.size} active SIMs")
+        val simTargets = getActiveSimTargets(subManager)
+        Log.d(TAG, "QueryStatusOnly: Found ${simTargets.size} active SIM targets")
 
-        for (subInfo in activeSubscriptions) {
-            val subId = subInfo.subscriptionId
-            val slotIndex = subInfo.simSlotIndex
-            val isImsRegistered = checkImsRegistered(subId)
-            Log.d(TAG, "QueryStatusOnly: SIM slot $slotIndex IMS Registered: $isImsRegistered")
+        val sharedPrefs = context.getSharedPreferences("volte_settings", Context.MODE_PRIVATE)
+
+        for ((slotIndex, subId) in simTargets) {
+            val isImsRegistered = checkImsRegistered(subId, slotIndex)
+            Log.d(TAG, "QueryStatusOnly: SIM slot $slotIndex (subId $subId) IMS Registered: $isImsRegistered")
             
-            val sharedPrefs = context.getSharedPreferences("volte_settings", Context.MODE_PRIVATE)
             sharedPrefs.edit().putBoolean("ims_registered_slot_$slotIndex", isImsRegistered).commit()
             
             try {
@@ -159,7 +197,7 @@ class BrokerInstrumentation : Instrumentation() {
         }
     }
 
-    private fun checkImsRegistered(subId: Int): Boolean {
+    private fun checkImsRegistered(subId: Int, slotIndex: Int): Boolean {
         return try {
             val serviceManagerClass = Class.forName("android.os.ServiceManager")
             val getServiceMethod = serviceManagerClass.getMethod("getService", String::class.java)
@@ -169,11 +207,43 @@ class BrokerInstrumentation : Instrumentation() {
             val telephonyService = asInterfaceMethod.invoke(null, binder)
             
             val iTelephonyClass = Class.forName("com.android.internal.telephony.ITelephony")
-            val method = iTelephonyClass.getMethod("isImsRegistered", Int::class.javaPrimitiveType)
-            method.isAccessible = true
-            method.invoke(telephonyService, subId) as Boolean
+            
+            // 1. Try isImsRegisteredForSubscriber(subId)
+            try {
+                val method = iTelephonyClass.declaredMethods.firstOrNull {
+                    it.name == "isImsRegisteredForSubscriber" && it.parameterTypes.size == 1 && it.parameterTypes[0] == Int::class.javaPrimitiveType
+                }
+                if (method != null) {
+                    method.isAccessible = true
+                    return method.invoke(telephonyService, subId) as Boolean
+                }
+            } catch (e: Exception) {}
+
+            // 2. Try isImsRegistered(subId)
+            try {
+                val method = iTelephonyClass.declaredMethods.firstOrNull {
+                    it.name == "isImsRegistered" && it.parameterTypes.size == 1 && it.parameterTypes[0] == Int::class.javaPrimitiveType
+                }
+                if (method != null) {
+                    method.isAccessible = true
+                    return method.invoke(telephonyService, subId) as Boolean
+                }
+            } catch (e: Exception) {}
+
+            // 3. Try isImsRegistered(slotIndex)
+            try {
+                val method = iTelephonyClass.declaredMethods.firstOrNull {
+                    it.name == "isImsRegistered"
+                }
+                if (method != null) {
+                    method.isAccessible = true
+                    return method.invoke(telephonyService, slotIndex) as Boolean
+                }
+            } catch (e: Exception) {}
+
+            false
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to check IMS registration for subId=$subId reflectively", e)
+            Log.e(TAG, "Failed to check IMS registration for subId=$subId, slot=$slotIndex reflectively", e)
             false
         }
     }
@@ -184,17 +254,14 @@ class BrokerInstrumentation : Instrumentation() {
         val carrierConfigManager = context.getSystemService(CarrierConfigManager::class.java) ?: return
         val telephonyManager = context.getSystemService(TelephonyManager::class.java) ?: return
 
-        // Under shell permission identity, activeSubscriptionInfoList is accessible directly
-        val activeSubscriptions = subManager.activeSubscriptionInfoList ?: emptyList()
-        Log.d(TAG, "Found ${activeSubscriptions.size} active SIMs")
+        val simTargets = getActiveSimTargets(subManager)
+        Log.d(TAG, "Processing ${simTargets.size} active SIM targets")
 
         val hasClearArg = arguments?.containsKey("clear") == true
         val clearArg = arguments?.getString("clear") == "true" || arguments?.getBoolean("clear") == true
 
         // Phase 1: Apply overrides or Clear overrides, and trigger IMS reset
-        for (subInfo in activeSubscriptions) {
-            val subId = subInfo.subscriptionId
-            val slotIndex = subInfo.simSlotIndex
+        for ((slotIndex, subId) in simTargets) {
             Log.d(TAG, "Processing SIM slot $slotIndex (SubID $subId)")
 
             val clear = if (hasClearArg) {
@@ -204,23 +271,27 @@ class BrokerInstrumentation : Instrumentation() {
             }
 
             if (clear) {
-                Log.d(TAG, "Clearing config for slot $slotIndex")
+                Log.d(TAG, "Clearing config for slot $slotIndex (subId $subId)")
                 try {
                     val appliedFile = java.io.File(context.filesDir, "config_applied_$slotIndex.txt")
                     appliedFile.writeText("false")
                 } catch (e: Exception) {}
                 try {
-                    val overrideMethod = findMethod(carrierConfigManager, "overrideConfig")
+                    val overrideMethod = carrierConfigManager.javaClass.declaredMethods.firstOrNull {
+                        it.name == "overrideConfig" && it.parameterTypes.size == 3
+                    } ?: carrierConfigManager.javaClass.declaredMethods.firstOrNull {
+                        it.name == "overrideConfig"
+                    }
                     if (overrideMethod != null) {
-                        val paramTypes = overrideMethod.parameterTypes
-                        if (paramTypes.size == 3) {
-                            overrideMethod.invoke(carrierConfigManager, subId, null, true)
+                        overrideMethod.isAccessible = true
+                        if (overrideMethod.parameterTypes.size == 3) {
+                            overrideMethod.invoke(carrierConfigManager, subId, null, false)
                         } else {
                             overrideMethod.invoke(carrierConfigManager, subId, null)
                         }
                     }
                 } catch (e: Exception) {
-                    Log.e(TAG, "Failed to clear carrier config reflectively", e)
+                    Log.e(TAG, "Failed to clear carrier config reflectively for subId $subId", e)
                 }
             } else {
                 val volte = sharedPrefs.getBoolean("volte_slot_$slotIndex", true)
@@ -232,8 +303,11 @@ class BrokerInstrumentation : Instrumentation() {
                 val showIms = sharedPrefs.getBoolean("show_ims_slot_$slotIndex", true)
                 val allowApn = sharedPrefs.getBoolean("allow_apn_slot_$slotIndex", false)
                 val bundle = PersistableBundle()
-                // VoLTE enabling & provisioning overrides
+
+                // VoLTE enabling & provisioning & roaming overrides
                 bundle.putBoolean("carrier_volte_available_bool", volte)
+                bundle.putBoolean("carrier_volte_roaming_available_bool", volte)
+                bundle.putBoolean("carrier_default_volte_roaming_enabled_bool", volte)
                 bundle.putBoolean("enhanced_4g_lte_on_by_default_bool", volte)
                 bundle.putBoolean("hide_enhanced_4g_lte_bool", !volte)
                 bundle.putBoolean("editable_enhanced_4g_lte_bool", volte)
@@ -244,8 +318,9 @@ class BrokerInstrumentation : Instrumentation() {
                 bundle.putBoolean("vonr_enabled_bool", vonr)
                 bundle.putBoolean("vonr_setting_visibility_bool", vonr)
 
-                // VoWiFi (Wi-Fi Calling) overrides
+                // VoWiFi (Wi-Fi Calling) & roaming overrides
                 bundle.putBoolean("carrier_wfc_ims_available_bool", vowifi)
+                bundle.putBoolean("carrier_wfc_ims_roaming_available_bool", vowifi)
                 bundle.putBoolean("carrier_default_wfc_ims_enabled_bool", vowifi)
                 bundle.putBoolean("carrier_wfc_ims_provisioned_bool", vowifi)
                 bundle.putBoolean("editable_wfc_mode_bool", vowifi)
@@ -259,39 +334,48 @@ class BrokerInstrumentation : Instrumentation() {
                 bundle.putBoolean("show_ims_registration_status_bool", showIms)
                 bundle.putBoolean("allow_adding_apns_bool", allowApn)
 
-                Log.d(TAG, "Applying config for slot $slotIndex: VoLTE=$volte, VoNR=$vonr, VoWiFi=$vowifi")
+                Log.d(TAG, "Applying config for slot $slotIndex (subId $subId): VoLTE=$volte, VoNR=$vonr, VoWiFi=$vowifi")
                 
                 try {
-                    val overrideMethod = findMethod(carrierConfigManager, "overrideConfig")
+                    val overrideMethod = carrierConfigManager.javaClass.declaredMethods.firstOrNull {
+                        it.name == "overrideConfig" && it.parameterTypes.size == 3
+                    } ?: carrierConfigManager.javaClass.declaredMethods.firstOrNull {
+                        it.name == "overrideConfig"
+                    }
                     if (overrideMethod != null) {
-                        val paramTypes = overrideMethod.parameterTypes
-                        if (paramTypes.size == 3) {
-                            overrideMethod.invoke(carrierConfigManager, subId, bundle, true)
+                        overrideMethod.isAccessible = true
+                        if (overrideMethod.parameterTypes.size == 3) {
+                            overrideMethod.invoke(carrierConfigManager, subId, bundle, false)
                         } else {
                             overrideMethod.invoke(carrierConfigManager, subId, bundle)
                         }
-                        Log.d(TAG, "Applied config reflectively")
+                        Log.d(TAG, "Applied config reflectively for subId $subId")
                         try {
                             val appliedFile = java.io.File(context.filesDir, "config_applied_$slotIndex.txt")
                             appliedFile.writeText("true")
                         } catch (e: Exception) {}
                     }
                 } catch (e: Exception) {
-                    Log.e(TAG, "Failed to apply config reflectively", e)
+                    Log.e(TAG, "Failed to apply config reflectively for subId $subId", e)
                 }
             }
 
-            // Reset IMS registration to force reload
+            // Reset IMS registration for subId using sub-bound TelephonyManager instance
             try {
-                val resetImsMethod = findMethod(telephonyManager, "resetIms")
-                resetImsMethod?.invoke(telephonyManager, slotIndex)
-                Log.d(TAG, "IMS reset sent for slot $slotIndex")
+                val subTelephonyManager = telephonyManager.createForSubscriptionId(subId)
+                val resetImsMethod = findMethod(subTelephonyManager, "resetIms")
+                if (resetImsMethod != null) {
+                    if (resetImsMethod.parameterTypes.isNotEmpty()) {
+                        resetImsMethod.invoke(subTelephonyManager, slotIndex)
+                    } else {
+                        resetImsMethod.invoke(subTelephonyManager)
+                    }
+                    Log.d(TAG, "IMS reset sent for slot $slotIndex subId $subId")
+                }
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to reset IMS reflectively", e)
+                Log.e(TAG, "Failed to reset IMS reflectively for subId $subId", e)
             }
         }
-
-        // Do not auto-launch MainActivity early, user will see the prompt/notification
 
         // Phase 2: Poll and update status for up to 30 seconds
         Log.d(TAG, "Entering status polling loop...")
@@ -299,11 +383,9 @@ class BrokerInstrumentation : Instrumentation() {
         val totalPolls = 30
         while (pollsLeft > 0) {
             var allRegistered = true
-            for (subInfo in activeSubscriptions) {
-                val subId = subInfo.subscriptionId
-                val slotIndex = subInfo.simSlotIndex
-                val isImsRegistered = checkImsRegistered(subId)
-                Log.d(TAG, "Poll $pollsLeft: SIM slot $slotIndex IMS Registered: $isImsRegistered")
+            for ((slotIndex, subId) in simTargets) {
+                val isImsRegistered = checkImsRegistered(subId, slotIndex)
+                Log.d(TAG, "Poll $pollsLeft: SIM slot $slotIndex (subId $subId) IMS Registered: $isImsRegistered")
                 
                 sharedPrefs.edit().putBoolean("ims_registered_slot_$slotIndex", isImsRegistered).commit()
                 try {
@@ -318,14 +400,11 @@ class BrokerInstrumentation : Instrumentation() {
 
             val secondsElapsed = totalPolls - pollsLeft
             if (hasClearArg && clearArg) {
-                // When clearing/restoring, wait until it's unregistered
                 if (!allRegistered) {
                     Log.d(TAG, "IMS successfully unregistered. Stopping poll.")
                     break
                 }
             } else {
-                // When applying/activating, wait until it's registered
-                // To avoid stale true values right after reset, only exit early after at least 5 seconds
                 if (allRegistered && secondsElapsed >= 5) {
                     Log.d(TAG, "IMS successfully registered. Stopping poll.")
                     break
@@ -344,26 +423,25 @@ class BrokerInstrumentation : Instrumentation() {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
         
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val ch = NotificationChannel(channelId, "IMS 激活状态", NotificationManager.IMPORTANCE_HIGH)
+            val ch = NotificationChannel(channelId, context.getString(R.string.notification_channel_ims_status), NotificationManager.IMPORTANCE_HIGH)
             notificationManager.createNotificationChannel(ch)
         }
         
-        // Read actual IMS status from files
         val slot0 = try { java.io.File(context.filesDir, "ims_status_0.txt").readText().trim().toBoolean() } catch (e: Exception) { false }
         val slot1 = try { java.io.File(context.filesDir, "ims_status_1.txt").readText().trim().toBoolean() } catch (e: Exception) { false }
         val anyRegistered = slot0 || slot1
         val title = if (isActivate) {
-            if (anyRegistered) "✅ VoLTE 激活成功" else "⚠️ VoLTE 激活完成"
+            if (anyRegistered) context.getString(R.string.notification_title_volte_success) else context.getString(R.string.notification_title_volte_done)
         } else {
-            "✅ 配置已恢复默认"
+            context.getString(R.string.notification_title_config_restored)
         }
         val body = if (isActivate) {
             buildString {
-                if (slot0) append("SIM 1: IMS 已注册  ") else append("SIM 1: IMS 未注册  ")
-                if (slot1) append("SIM 2: IMS 已注册") else append("SIM 2: IMS 未注册")
+                if (slot0) append(context.getString(R.string.notification_sim1_registered)) else append(context.getString(R.string.notification_sim1_not_registered))
+                if (slot1) append(context.getString(R.string.notification_sim2_registered)) else append(context.getString(R.string.notification_sim2_not_registered))
             }
         } else {
-            "运营商覆盖配置已清除，请测试通话功能是否正常"
+            context.getString(R.string.notification_config_cleared)
         }
         
         val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
