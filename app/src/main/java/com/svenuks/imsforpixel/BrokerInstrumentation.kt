@@ -314,6 +314,9 @@ class BrokerInstrumentation : Instrumentation() {
                 bundle.putBoolean("carrier_volte_provisioned_bool", volte)
                 bundle.putBoolean("carrier_volte_provisioning_required_bool", false)
 
+                // Carrier Aggregation / LTE+ display threshold override
+                bundle.putInt("lte_plus_threshold_bandwidth_khz_int", 0)
+
                 // VoNR (5G Calling) overrides
                 bundle.putBoolean("vonr_enabled_bool", vonr)
                 bundle.putBoolean("vonr_setting_visibility_bool", vonr)
