@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">IMS for Pixel</string>
+    <string name="app_subtitle">Настройка вызовов VoLTE/VoNR без Root</string>
+
+    <!-- Notification Strings -->
+    <string name="notification_channel_ims_status">Статус активации IMS</string>
+    <string name="notification_title_volte_success">✅ VoLTE успешно активирован</string>
+    <string name="notification_title_volte_done">⚠️ Активация VoLTE завершена</string>
+    <string name="notification_title_config_restored">✅ Настройки сброшены по умолчанию</string>
+    <string name="notification_sim1_registered">SIM 1: IMS зарегистрирован  </string>
+    <string name="notification_sim1_not_registered">SIM 1: IMS не зарегистрирован  </string>
+    <string name="notification_sim2_registered">SIM 2: IMS зарегистрирован</string>
+    <string name="notification_sim2_not_registered">SIM 2: IMS не зарегистрирован</string>
+    <string name="notification_config_cleared">Настройки оператора очищены, проверьте работу вызовов</string>
+
+    <string name="notification_permission_required">Требуется разрешение на уведомления для ввода кода сопряжения</string>
+    <string name="notification_channel_pairing">Сопряжение по беспроводной отладке</string>
+    <string name="notification_channel_pairing_desc">Используется для ввода кода сопряжения из панели уведомлений</string>
+    <string name="notification_pairing_reply_label">Введите 6-значный код</string>
+    <string name="notification_pairing_send_action">Отправить код</string>
+    <string name="notification_pairing_prompt">💡 Нажмите «Отправить код» ниже, чтобы ввести 6 цифр</string>
+    <string name="toast_pairing_port_missing">Порт сопряжения не обнаружен. Убедитесь, что диалоговое окно сопряжения открыто!</string>
+    <string name="notification_pairing_failed_port">Ошибка сопряжения: порт диалога системы не обнаружен</string>
+    <string name="toast_pairing_in_progress">Сопряжение устройства в фоновом режиме...</string>
+    <string name="notification_pairing_port_progress">Сопряжение с портом %1$d...</string>
+    <string name="toast_pairing_success">Сопряжение успешно выполнено!</string>
+    <string name="notification_pairing_success">Сопряжение успешно! Вернитесь в приложение для активации.</string>
+    <string name="toast_pairing_failed">Ошибка сопряжения: %1$s</string>
+    <string name="notification_pairing_failed">Ошибка сопряжения: %1$s</string>
+
+    <!-- Toast Strings -->
+    <string name="toast_enable_wireless_debugging">Сначала включите беспроводную отладку</string>
+    <string name="toast_activation_failed">Сбой активации: %1$s</string>
+    <string name="toast_restore_failed">Сбой восстановления: %1$s</string>
+    <string name="toast_developer_options_not_found">Параметры разработчика не найдены</string>
+
+    <!-- UI Tabs & Headers -->
+    <string name="sim_slot_1">SIM 1</string>
+    <string name="sim_slot_2">SIM 2</string>
+    <string name="config_panel_title">Параметры оператора (SIM %1$d)</string>
+    <string name="badge_config_applied">Конфиг: Применён</string>
+    <string name="badge_config_default">Конфиг: По умолчанию</string>
+    <string name="badge_ims_registered">IMS: Зарегистрирован</string>
+    <string name="badge_ims_not_registered">IMS: Не зарегистрирован</string>
+
+    <!-- Toggle Switches -->
+    <string name="toggle_volte_title">Включить вызовы VoLTE (VoLTE)</string>
+    <string name="toggle_volte_desc">Разрешить голосовые вызовы через сеть 4G/LTE</string>
+    <string name="toggle_vonr_title">Включить вызовы 5G (VoNR)</string>
+    <string name="toggle_vonr_desc">Включить поддержку голосовых вызовов в сетях 5G (VoNR)</string>
+    <string name="toggle_vowifi_title">Включить вызовы по Wi-Fi (VoWiFi)</string>
+    <string name="toggle_vowifi_desc">Совершать вызовы по Wi-Fi при слабом сигнале сети</string>
+    <string name="toggle_wfc_roaming_title">Включить VoWiFi в роуминге</string>
+    <string name="toggle_wfc_roaming_desc">Использовать вызовы по Wi-Fi за границей или в роуминге</string>
+    <string name="toggle_ss_ut_title">Включить доп. услуги (UT)</string>
+    <string name="toggle_ss_ut_desc">Включить переадресацию, ожидание вызова и доп. сетевые функции</string>
+
+    <!-- Wireless Debugging Card -->
+    <string name="card_activation_title">Активация через беспроводную отладку</string>
+    <string name="step1_title">Шаг 1: Подключитесь к Wi-Fi (Обязательно)</string>
+    <string name="step1_desc">Для беспроводной отладке требуется подключение к сети Wi-Fi</string>
+    <string name="status_connected">Подключено</string>
+    <string name="status_not_connected">Не подключено</string>
+
+    <string name="step2_title">Шаг 2: Включите службу и сопряжение</string>
+    <string name="step2_status_authorized">Сопряжено и авторизовано</string>
+    <string name="step2_status_needs_pairing">Служба включена (требуется сопряжение)</string>
+    <string name="step2_status_prompt">Включите беспроводную отладку в настройках</string>
+    <string name="badge_authorized">Авторизовано</string>
+    <string name="badge_unpaired">Не сопряжено</string>
+    <string name="btn_open_wireless_debugging">Перейти к беспроводной отладке</string>
+
+    <string name="step3_title">Шаг 3: Активация в один клик</string>
+    <string name="step3_desc">Применить параметры к активным SIM-картам</string>
+    <string name="sim1_config_title">Настройки вызовов SIM 1</string>
+    <string name="sim2_config_title">Настройки вызовов SIM 2</string>
+    <string name="status_app_optimized">Оптимизировано</string>
+    <string name="status_system_default">По умолчанию</string>
+    <string name="btn_activate">Активировать</string>
+    <string name="btn_waiting">Ожидание службы...</string>
+    <string name="btn_restore">Сбросить настройки</string>
+    <string name="hint_ims_update">💡 Статус IMS обновится автоматически в течение нескольких секунд после активации.</string>
+    <string name="toggle_hide_advanced">Скрыть расширенные настройки</string>
+    <string name="toggle_show_advanced">Показать расширенные настройки</string>
+    <string name="label_adb_port">Порт подключения (ADB Port)</string>
+</resources>
